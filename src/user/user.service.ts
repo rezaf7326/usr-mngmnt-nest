@@ -5,37 +5,40 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserEntity } from './entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
-  private users: Array<UserEntity> = [];
   private logger: LoggerService;
 
-  constructor() {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+  ) {
     this.logger = new Logger(this.constructor.name);
   }
 
   findAll(): Promise<Array<UserEntity>> {
     this.logger.debug('find all users');
-    return Promise.resolve(this.users);
+    return this.userRepository.find();
   }
 
   async findOne(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('find user', { id });
-    const user = this.users.find((user) => user.id === id);
+    const user = await this.userRepository.findOneBy({ id });
     !user && this.throwNotFoundError({ id });
 
     return user;
   }
 
-  async create(data: Partial<UserEntity>): Promise<UserEntity> {
+  async create(data: CreateUserDto): Promise<UserEntity> {
     this.logger.debug('creating new user...');
-    const createdUser: UserEntity = {
-      id: this.users.length + 1,
-      ...data,
-    } as UserEntity;
-    // validate data if necessary
-    this.users.push(createdUser);
+    const createdUser = await this.userRepository.save(
+      this.userRepository.create({ ...data }),
+    );
     this.logger.verbose('user is created', {
       ...this.userLogData(createdUser),
     });
@@ -45,31 +48,27 @@ export class UserService {
 
   async update(
     id: number,
-    data: Partial<UserEntity>,
+    updateDto: UpdateUserDto,
   ): Promise<UserEntity | undefined> {
-    this.logger.debug('update user', { id, ...this.userLogData(data) });
-    let user = this.users.find((user) => user.id === id);
-    delete data.id; // to prevent id modification
-    !user && this.throwNotFoundError({ id, ...data });
-    user = {
-      ...user,
-      ...data,
-    };
-    this.users.splice(
-      this.users.findIndex((user) => user.id === id),
-      1,
-      user,
-    );
-    this.logger.verbose('user is updated', { ...this.userLogData(user) });
+    this.logger.debug('update user', { id, ...this.userLogData(updateDto) });
+    const updatedUser = await this.userRepository.preload({
+      id,
+      ...updateDto,
+    });
+    !updatedUser && this.throwNotFoundError({ id, ...updateDto });
+    await this.userRepository.save(updatedUser);
+    this.logger.verbose('user is updated', {
+      ...this.userLogData(updatedUser),
+    });
 
-    return user;
+    return updatedUser;
   }
 
   async remove(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('delete user', { id });
-    const user = this.users.find((user) => user.id === id);
+    const user = await this.userRepository.findOneBy({ id });
     !user && this.throwNotFoundError({ id });
-    this.users = this.users.filter((user) => user.id !== id);
+    await this.userRepository.remove(user);
     this.logger.verbose('user is deleted', { id });
 
     return user;
@@ -82,10 +81,10 @@ export class UserService {
     throw new NotFoundException(`no user was found with id ${user.id}`);
   }
 
-  private userLogData(data: Partial<UserEntity>): Partial<UserEntity> {
+  private userLogData(data: UserEntity | UpdateUserDto | CreateUserDto) {
     return {
       ...data,
-      password: data.password ? '*'.repeat(data.password.length) : '-',
+      ...(data.password ? { password: '*'.repeat(data.password.length) } : {}),
     };
   }
 }
