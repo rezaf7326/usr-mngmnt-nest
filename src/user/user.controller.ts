@@ -18,8 +18,8 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get(':id')
-  findOne(@Param() param) {
-    return this.userService.findOne(Number(param.id));
+  findOne(@Param('id') id: number) {
+    return this.userService.findOne(id);
   }
 
   @Post()
@@ -29,12 +29,12 @@ export class UserController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateUserDto) {
-    return this.userService.update(Number(id), updateDto);
+  update(@Param('id') id: number, @Body() updateDto: UpdateUserDto) {
+    return this.userService.update(id, updateDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(Number(id));
+  remove(@Param('id') id: number) {
+    return this.userService.remove(id);
   }
 }
