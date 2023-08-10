@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
   LoggerService,
@@ -36,14 +37,22 @@ export class UserService {
 
   async create(data: CreateUserDto): Promise<UserEntity> {
     this.logger.debug('creating new user...');
-    const createdUser = await this.userRepository.save(
-      this.userRepository.create({ ...data }),
-    );
-    this.logger.verbose('user is created', {
-      ...this.userLogData(createdUser),
-    });
+    try {
+      const createdUser = await this.userRepository.save(
+        this.userRepository.create({ ...data }),
+      );
+      this.logger.verbose('user is created', {
+        ...this.userLogData(createdUser),
+      });
 
-    return createdUser;
+      return createdUser;
+    } catch (error) {
+      this.logger.error('duplication in create user', {
+        userData: { ...this.userLogData(data) },
+        error,
+      });
+      throw new BadRequestException('email or username already exists');
+    }
   }
 
   async update(
@@ -67,9 +76,10 @@ export class UserService {
   async remove(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('delete user', { id });
     const user = await this.userRepository.findOneBy({ id });
-    !user && this.throwNotFoundError({ id });
-    await this.userRepository.remove(user);
-    this.logger.verbose('user is deleted', { id });
+    if (user) {
+      await this.userRepository.remove(user);
+      this.logger.verbose('user is deleted', { id });
+    }
 
     return user;
   }
