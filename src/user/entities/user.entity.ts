@@ -1,6 +1,14 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToOne,
+  JoinColumn,
+  BeforeInsert,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ProfileEntity } from './profile.entity';
 
-@Entity()
+@Entity('user')
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -18,4 +26,8 @@ export class UserEntity {
   emailToLowerCase() {
     this.email = this.email.toLowerCase();
   }
+
+  @JoinColumn()
+  @OneToOne(() => ProfileEntity)
+  profile: ProfileEntity;
 }

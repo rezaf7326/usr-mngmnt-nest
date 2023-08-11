@@ -6,9 +6,13 @@ import { UserEntity } from './entities/user.entity';
 import { CryptoModule } from '../crypto/crypto.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '../auth/auth.guard';
+import { ProfileEntity } from './entities/profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity]), CryptoModule],
+  imports: [
+    TypeOrmModule.forFeature([UserEntity, ProfileEntity]),
+    CryptoModule,
+  ],
   controllers: [UserController],
   exports: [UserService],
   providers: [

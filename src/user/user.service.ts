@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CryptoService } from '../crypto/crypto.service';
+import { Express } from 'express';
 
 @Injectable()
 export class UserService {
@@ -31,7 +32,11 @@ export class UserService {
 
   async findOne(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('find user', { id });
-    const user = await this.userRepository.findOneBy({ id });
+    // const user = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
     this.handleNotFound(user, { id });
 
     return user;
@@ -61,6 +66,18 @@ export class UserService {
     this.logger.verbose('user created', { createdUser });
 
     return createdUser;
+  }
+
+  async updateImage(id: number, file: Express.Multer.File) {
+    this.logger.debug('update user image', { id });
+    // TODO REMOVE
+    console.log(
+      'image',
+      file.originalname,
+      file.filename,
+      file.mimetype,
+      file.buffer,
+    );
   }
 
   async update(

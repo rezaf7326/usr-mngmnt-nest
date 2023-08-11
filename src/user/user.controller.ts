@@ -2,14 +2,18 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
-  UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +21,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Public } from '../decorators/public.decorator';
 import { AuthenticatedUser } from '../decorators/authenticated-user.decorator';
 import { AuthenticateDto } from '../auth/dto/authenticate.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -36,6 +42,26 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateUserDto) {
     return this.userService.create(createDto);
+  }
+
+  @Post(':id/img')
+  @UseInterceptors(FileInterceptor('profile'))
+  @HttpCode(HttpStatus.CREATED)
+  updateProfile(
+    @Param('id') id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5_000_000 }), // five megabytes max
+          new FileTypeValidator({ fileType: 'image/jpeg' }),
+        ],
+      }),
+    )
+    image: Express.Multer.File,
+    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+  ) {
+    this.authorization(id, authenticatedUser);
+    return this.userService.updateImage(id, image);
   }
 
   @Patch(':id')
