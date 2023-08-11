@@ -33,7 +33,7 @@ export class UserController {
     @Param('id') id: number,
     @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
-    this.authorization(id, authenticatedUser);
+    this.authorize(id, authenticatedUser);
     return this.userService.findOne(id);
   }
 
@@ -60,7 +60,7 @@ export class UserController {
     image: Express.Multer.File,
     @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
-    this.authorization(id, authenticatedUser);
+    this.authorize(id, authenticatedUser);
     return this.userService.updateImage(id, image);
   }
 
@@ -69,7 +69,7 @@ export class UserController {
     @Param('id') id: number,
     @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
-    this.authorization(id, authenticatedUser);
+    this.authorize(id, authenticatedUser);
     return this.userService.removeImage(id);
   }
 
@@ -79,7 +79,7 @@ export class UserController {
     @Body() updateDto: UpdateUserDto,
     @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
-    this.authorization(id, authenticatedUser);
+    this.authorize(id, authenticatedUser);
     return this.userService.update(id, updateDto);
   }
 
@@ -88,11 +88,11 @@ export class UserController {
     @Param('id') id: number,
     @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
-    this.authorization(id, authenticatedUser);
+    this.authorize(id, authenticatedUser);
     return this.userService.remove(id);
   }
 
-  private authorization(id: number, authenticatedUser: AuthenticatedDto) {
+  private authorize(id: number, authenticatedUser: AuthenticatedDto) {
     if (authenticatedUser.id !== id) {
       throw new ForbiddenException();
     }
