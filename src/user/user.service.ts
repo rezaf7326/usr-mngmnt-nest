@@ -40,6 +40,7 @@ export class UserService {
   async findOneByEmail(email: string): Promise<UserEntity | undefined> {
     this.logger.debug('find user by email', { email });
     const user = await this.userRepository.findOneBy({ email });
+    this.logger.warn('user', { user }); // TODO REMOVE
     this.handleNotFound(user, { email });
 
     return user;
@@ -47,24 +48,19 @@ export class UserService {
 
   async create(data: CreateUserDto): Promise<UserEntity> {
     this.logger.debug('creating new user...');
-    try {
-      const createdUser = await this.userRepository.save(
-        this.userRepository.create({
-          ...data,
-          passwordHash: await this.cryptoService.hashPassword(data.password),
-        }),
-      );
-      this.logger.verbose('user created', { createdUser });
-
-      return createdUser;
-    } catch (error) {
-      // TODO enhance exception handling
-      this.logger.error('duplication in create user', {
-        email: data.email,
-        error,
-      });
+    if (await this.emailExists(data.email)) {
+      this.logger.error('create user email existed', { email: data.email });
       throw new BadRequestException('email already exists');
     }
+    const createdUser = await this.userRepository.save(
+      this.userRepository.create({
+        ...data,
+        passwordHash: await this.cryptoService.hashPassword(data.password),
+      }),
+    );
+    this.logger.verbose('user created', { createdUser });
+
+    return createdUser;
   }
 
   async update(
@@ -92,6 +88,17 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async emailExists(email: string): Promise<boolean> {
+    let alreadyExists = false;
+    try {
+      alreadyExists = !!(await this.findOneByEmail(email));
+    } catch (e) {
+      /* skip not found error */
+    }
+
+    return alreadyExists;
   }
 
   private handleNotFound(user?: UserEntity, data?: Partial<UserEntity>) {

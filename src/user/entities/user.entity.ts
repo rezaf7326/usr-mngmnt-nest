@@ -8,7 +8,7 @@ export class UserEntity {
   @Column({ nullable: true })
   name: string;
 
-  @Column({ select: false })
+  @Column()
   passwordHash: string;
 
   @Column({ unique: true })
