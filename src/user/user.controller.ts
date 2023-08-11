@@ -20,7 +20,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Public } from '../decorators/public.decorator';
 import { AuthenticatedUser } from '../decorators/authenticated-user.decorator';
-import { AuthenticateDto } from '../auth/dto/authenticate.dto';
+import { AuthenticatedDto } from '../auth/dto/authenticated.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 
@@ -31,7 +31,7 @@ export class UserController {
   @Get(':id')
   findOne(
     @Param('id') id: number,
-    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+    @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
     this.authorization(id, authenticatedUser);
     return this.userService.findOne(id);
@@ -58,7 +58,7 @@ export class UserController {
       }),
     )
     image: Express.Multer.File,
-    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+    @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
     this.authorization(id, authenticatedUser);
     return this.userService.updateImage(id, image);
@@ -67,7 +67,7 @@ export class UserController {
   @Delete(':id/img')
   removeProfile(
     @Param('id') id: number,
-    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+    @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
     this.authorization(id, authenticatedUser);
     return this.userService.removeImage(id);
@@ -77,7 +77,7 @@ export class UserController {
   update(
     @Param('id') id: number,
     @Body() updateDto: UpdateUserDto,
-    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+    @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
     this.authorization(id, authenticatedUser);
     return this.userService.update(id, updateDto);
@@ -86,13 +86,13 @@ export class UserController {
   @Delete(':id')
   remove(
     @Param('id') id: number,
-    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+    @AuthenticatedUser() authenticatedUser: AuthenticatedDto,
   ) {
     this.authorization(id, authenticatedUser);
     return this.userService.remove(id);
   }
 
-  private authorization(id: number, authenticatedUser: AuthenticateDto) {
+  private authorization(id: number, authenticatedUser: AuthenticatedDto) {
     if (authenticatedUser.id !== id) {
       throw new ForbiddenException();
     }

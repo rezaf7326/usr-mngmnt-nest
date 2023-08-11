@@ -1,6 +1,6 @@
 import { IsEmail, IsNumber, IsString } from 'class-validator';
 
-export class AuthenticateDto {
+export class AuthenticatedDto {
   @IsNumber()
   readonly id: number;
 
