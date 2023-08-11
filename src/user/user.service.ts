@@ -51,7 +51,7 @@ export class UserService {
         userData: { ...this.userLogData(data) },
         error,
       });
-      throw new BadRequestException('email or username already exists');
+      throw new BadRequestException('email already exists'); // TODO enhance
     }
   }
 
