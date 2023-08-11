@@ -1,42 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { CryptoUtility } from './crypto.utility';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class CryptoService {
-  constructor(private configService: ConfigService) {
-    CryptoUtility.setup(configService);
-  }
+  private readonly saltRounds = 10;
 
   generateUUID(): string {
-    return CryptoUtility.generateUUID();
+    return crypto.randomUUID();
   }
 
   generateRandomString(size: number): string {
-    return CryptoUtility.generateRandomString(size);
+    return crypto.randomBytes(size).toString('base64').slice(0, size);
   }
 
   generateEncryptionKey() {
-    return CryptoUtility.generateEncryptionKey();
-  }
-
-  encryptString(str: string, key?: string | Buffer): string {
-    return CryptoUtility.encryptString(str, key);
-  }
-
-  decryptString(str: string, key?: string | Buffer): string {
-    return CryptoUtility.decryptString(str, key);
+    return crypto.randomBytes(32);
   }
 
   hashPassword(password: string): Promise<string> {
-    return CryptoUtility.hashPassword(password);
+    return bcrypt.hash(password, this.saltRounds);
   }
 
   verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return CryptoUtility.verifyPassword(password, hashedPassword);
+    return bcrypt.compare(password, hashedPassword);
   }
 
-  hash(str: string | Buffer, algorithm?: string): string {
-    return CryptoUtility.hash(str, algorithm);
-  }
+  // encryptString(str: string, key?: string | Buffer): string {}
+  // decryptString(str: string, key?: string | Buffer): string {}
 }

@@ -9,7 +9,7 @@ export class UserEntity {
   name: string;
 
   @Column({ select: false })
-  password: string; // TODO replace with "hashedPassword"
+  passwordHash: string;
 
   @Column({ unique: true })
   email: string;

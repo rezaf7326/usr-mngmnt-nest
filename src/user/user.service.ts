@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly cryptoService: CryptoService,
   ) {
     this.logger = new Logger(this.constructor.name);
   }
@@ -30,7 +32,15 @@ export class UserService {
   async findOne(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('find user', { id });
     const user = await this.userRepository.findOneBy({ id });
-    !user && this.throwNotFoundError({ id });
+    this.handleNotFound(user, { id });
+
+    return user;
+  }
+
+  async findOneByEmail(email: string): Promise<UserEntity | undefined> {
+    this.logger.debug('find user by email', { email });
+    const user = await this.userRepository.findOneBy({ email });
+    this.handleNotFound(user, { email });
 
     return user;
   }
@@ -39,19 +49,21 @@ export class UserService {
     this.logger.debug('creating new user...');
     try {
       const createdUser = await this.userRepository.save(
-        this.userRepository.create({ ...data }),
+        this.userRepository.create({
+          ...data,
+          passwordHash: await this.cryptoService.hashPassword(data.password),
+        }),
       );
-      this.logger.verbose('user is created', {
-        ...this.userLogData(createdUser),
-      });
+      this.logger.verbose('user created', { createdUser });
 
       return createdUser;
     } catch (error) {
+      // TODO enhance exception handling
       this.logger.error('duplication in create user', {
-        userData: { ...this.userLogData(data) },
+        email: data.email,
         error,
       });
-      throw new BadRequestException('email already exists'); // TODO enhance
+      throw new BadRequestException('email already exists');
     }
   }
 
@@ -59,16 +71,14 @@ export class UserService {
     id: number,
     updateDto: UpdateUserDto,
   ): Promise<UserEntity | undefined> {
-    this.logger.debug('update user', { id, ...this.userLogData(updateDto) });
+    this.logger.debug('update user', { id });
     const updatedUser = await this.userRepository.preload({
       id,
       ...updateDto,
     });
-    !updatedUser && this.throwNotFoundError({ id, ...updateDto });
+    this.handleNotFound(updatedUser, { id });
     await this.userRepository.save(updatedUser);
-    this.logger.verbose('user is updated', {
-      ...this.userLogData(updatedUser),
-    });
+    this.logger.verbose('user is updated', updatedUser);
 
     return updatedUser;
   }
@@ -84,17 +94,10 @@ export class UserService {
     return user;
   }
 
-  private throwNotFoundError(user: Partial<UserEntity>) {
-    this.logger.error('user not found', {
-      ...this.userLogData(user),
-    });
-    throw new NotFoundException(`no user was found with id ${user.id}`);
-  }
-
-  private userLogData(data: UserEntity | UpdateUserDto | CreateUserDto) {
-    return {
-      ...data,
-      ...(data.password ? { password: '*'.repeat(data.password.length) } : {}),
-    };
+  private handleNotFound(user?: UserEntity, data?: Partial<UserEntity>) {
+    if (!user) {
+      this.logger.error('user not found', data);
+      throw new NotFoundException('user not found');
+    }
   }
 }
