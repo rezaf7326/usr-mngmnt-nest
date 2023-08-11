@@ -64,6 +64,15 @@ export class UserController {
     return this.userService.updateImage(id, image);
   }
 
+  @Delete(':id/img')
+  removeProfile(
+    @Param('id') id: number,
+    @AuthenticatedUser() authenticatedUser: AuthenticateDto,
+  ) {
+    this.authorization(id, authenticatedUser);
+    return this.userService.removeImage(id);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: number,

@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CryptoService } from '../crypto/crypto.service';
 import { Express } from 'express';
+import { ProfileEntity } from './entities/profile.entity';
 
 @Injectable()
 export class UserService {
@@ -20,6 +21,8 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(ProfileEntity)
+    private readonly profileRepository: Repository<ProfileEntity>,
     private readonly cryptoService: CryptoService,
   ) {
     this.logger = new Logger(this.constructor.name);
@@ -32,7 +35,6 @@ export class UserService {
 
   async findOne(id: number): Promise<UserEntity | undefined> {
     this.logger.debug('find user', { id });
-    // const user = await this.userRepository.findOneBy({ id });
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['profile'],
@@ -45,7 +47,6 @@ export class UserService {
   async findOneByEmail(email: string): Promise<UserEntity | undefined> {
     this.logger.debug('find user by email', { email });
     const user = await this.userRepository.findOneBy({ email });
-    this.logger.warn('user', { user }); // TODO REMOVE
     this.handleNotFound(user, { email });
 
     return user;
@@ -61,6 +62,7 @@ export class UserService {
       this.userRepository.create({
         ...data,
         passwordHash: await this.cryptoService.hashPassword(data.password),
+        profile: this.profileRepository.create({ image: null, mimeType: '' }),
       }),
     );
     this.logger.verbose('user created', { createdUser });
@@ -70,14 +72,18 @@ export class UserService {
 
   async updateImage(id: number, file: Express.Multer.File) {
     this.logger.debug('update user image', { id });
-    // TODO REMOVE
-    console.log(
-      'image',
-      file.originalname,
-      file.filename,
-      file.mimetype,
-      file.buffer,
-    );
+    const user = await this.findOne(id);
+    user.profile.image = file.buffer;
+    user.profile.mimeType = file.mimetype;
+    await this.userRepository.save(user);
+  }
+
+  async removeImage(id: number) {
+    this.logger.debug('remove user image', { id });
+    const user = await this.findOne(id);
+    user.profile.image = null;
+    user.profile.mimeType = '';
+    await this.userRepository.save(user);
   }
 
   async update(

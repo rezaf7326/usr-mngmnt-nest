@@ -5,12 +5,9 @@ export class ProfileEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
-  image: string;
+  @Column({ type: 'bytea', nullable: true })
+  image: Buffer;
 
-  // @Column({ nullable: true })
-  // bio: string;
-
-  // @Column({ default: false })
-  // verified: boolean;
+  @Column()
+  mimeType: string;
 }

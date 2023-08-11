@@ -28,6 +28,12 @@ export class UserEntity {
   }
 
   @JoinColumn()
-  @OneToOne(() => ProfileEntity)
+  @OneToOne(() => ProfileEntity, { cascade: true })
   profile: ProfileEntity;
+
+  // @Column({ nullable: true })
+  // bio: string;
+
+  // @Column({ default: false })
+  // verified: boolean;
 }
