@@ -6,7 +6,7 @@ import { CryptoModule } from '../crypto/crypto.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthGuard } from './auth.guard';
 import { APP_GUARD } from '@nestjs/core';
-import { SecretTmp } from '../secret-tmp';
+import { SecretTmp } from '../config-loader/secret-tmp';
 
 @Module({
   imports: [
