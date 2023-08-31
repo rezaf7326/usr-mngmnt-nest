@@ -1,1 +1,1 @@
-export const STRIPE_PROVIDER = 'STRIPE_PROVIDER';
+export const STRIPE_CLIENT = 'STRIPE_CLIENT';
